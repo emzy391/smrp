@@ -1,5 +1,7 @@
+import csv
 import tkinter as tk
-from tkinter import ttk  # Import ttk for styled widgets (like Entry)
+from tkinter import ttk
+import tkinter.font as tkFont
 
 
 def create_window():
@@ -86,12 +88,10 @@ def create_window():
 
     def show_authors():
         clear_content()
-        back_button = ttk.Button(content_frame, text="< Назад", command=show_main_menu)
-        back_button.pack(anchor="nw", padx=5, pady=5)
 
-        label = tk.Label(content_frame, text="Информация об авторах будет здесь.", font=('Arial', 12))
-        label.pack(pady=20)
-        # Здесь должен быть код для отображения информации об авторах
+        # Создаем основной контейнер с разделением на две части
+        paned_window = ttk.PanedWindow(content_frame, orient=tk.HORIZONTAL)
+        paned_window.pack(fill=tk.BOTH, expand=True)
 
     # Отображаем основное меню при запуске
     show_main_menu()
