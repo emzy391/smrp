@@ -20,7 +20,7 @@ def create_window():
 
     # Frame для поисковой строки (всегда отображается)
     search_frame = tk.Frame(root, bg="#ADD8E6")
-    search_frame.pack(pady=(window_height // 16, 0))пш
+    search_frame.pack(pady=(window_height // 16, 0))
 
     # Поисковая строка
     search_entry = ttk.Entry(search_frame, width=60)
