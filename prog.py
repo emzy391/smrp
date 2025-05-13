@@ -1,7 +1,8 @@
+import csv
 import tkinter as tk
 from tkinter import ttk  # Import ttk for styled widgets (like Entry)
-import csv
 import datetime
+import tkinter.font as tkFont
 
 
 def create_window():
@@ -272,12 +273,130 @@ def create_window():
 
     def show_authors():
         clear_content()
-        back_button = ttk.Button(content_frame, text="< Назад", command=show_main_menu)
+
+        # Создаем основной контейнер с разделением на две части
+        paned_window = ttk.PanedWindow(content_frame, orient=tk.HORIZONTAL)
+        paned_window.pack(fill=tk.BOTH, expand=True)
+
+        # Левая панель для списка авторов
+        left_frame = ttk.Frame(paned_window, width=500)
+
+        # Правая панель для детальной информации (изначально пустая)
+        right_frame = ttk.Frame(paned_window, width=400)
+        info_label = tk.Label(right_frame, text="Выберите автора для просмотра информации",
+                              font=('Arial', 14, 'bold'), wraplength=450, justify='left')
+        info_label.pack(padx=20, pady=35)
+
+        paned_window.add(left_frame)
+        paned_window.add(right_frame)
+
+        # Кнопка "Назад" в левом верхнем углу
+        back_button = ttk.Button(left_frame, text="< Назад", command=show_main_menu)
         back_button.pack(anchor="nw", padx=5, pady=5)
 
-        label = tk.Label(content_frame, text="Информация об авторах будет здесь.", font=('Arial', 12))
-        label.pack(pady=20)
-        # Здесь должен быть код для отображения информации об авторах
+        # Заголовок списка авторов
+        label = tk.Label(left_frame, text="Список авторов:", font=('Arial', 14, 'bold'))
+        label.pack(pady=(0, 15))
+
+        # Фрейм для списка с прокруткой
+        list_container = tk.Frame(left_frame)
+        list_container.pack(fill="both", expand=True)
+
+        # Создаем canvas и скроллбар
+        canvas = tk.Canvas(list_container)
+        scrollbar = tk.Scrollbar(
+            list_container,
+            orient="vertical",
+            command=canvas.yview,
+            width=15
+        )
+        scrollable_frame = tk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Загрузка данных из CSV файла
+        def load_authors():
+            authors = []
+            try:
+                with open('masters.csv', mode='r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file, delimiter=';')
+                    for row in reader:
+                        authors.append({
+                            'id': row['ID_master'],
+                            'name': row['name'],
+                            'years': row['year_of_live'],
+                            'city': row['city'],
+                            'country': row['country']
+                        })
+            except FileNotFoundError:
+                print("Файл masters.csv не найден")
+            return authors
+
+        # Получаем список авторов
+        authors = load_authors()
+
+        # Функция для отображения информации об авторе в правой панели
+        def show_author_info(author):
+            # Очищаем правую панель
+            for widget in right_frame.winfo_children():
+                widget.destroy()
+
+            # Основная информация
+            info_frame = tk.Frame(right_frame)
+            info_frame.pack(fill="both", expand=True, padx=20, pady=35)
+
+            name_label = tk.Label(info_frame, text=author["name"], font=('Arial', 16, 'bold'))
+            name_label.pack(pady=(0, 15))
+
+            details = [
+                f"Годы жизни: {author['years']}",
+                f"Место рождения: {author['city']}, {author['country']}"
+            ]
+
+            for detail in details:
+                tk.Label(info_frame, text=detail, font=('Arial', 12), justify='left').pack(anchor='w', pady=2)
+
+        # Создаем кнопки для каждого автора
+        for author in authors:
+            # Используем Label вместо Button для лучшего отображения
+            frame = tk.Frame(scrollable_frame)
+            frame.pack(fill="x", pady=2)
+
+            # Стиль для "кнопки"
+            lbl = tk.Label(
+                frame,
+                text=author['name'],
+                font=('Arial', 11),
+                anchor='w',
+                padx=10,
+                pady=5,
+                bg='#f0f0f0',
+                relief='ridge'
+            )
+            lbl.pack(fill="x")
+
+            # Делаем кликабельным
+            lbl.bind("<Button-1>", lambda e, a=author: show_author_info(a))
+            lbl.bind("<Enter>", lambda e: e.widget.config(bg='#e0e0e0'))
+            lbl.bind("<Leave>", lambda e: e.widget.config(bg='#f0f0f0'))
+
+            # Автоматически подбираем ширину
+            max_width = max(
+                tkFont.Font(family='Arial', size=11).measure(author['name'])  # Use tkFont.Font
+                for author in authors) + 30  # Добавляем отступы
+
+            canvas.config(width=min(max_width, 500))  # Ограничиваем максимальную ширину
 
     # Отображаем основное меню при запуске
     show_main_menu()
