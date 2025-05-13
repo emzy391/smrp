@@ -79,12 +79,25 @@ def create_window():
 
     def show_exhibits():
         clear_content()
-        back_button = ttk.Button(content_frame, text="< Назад", command=show_main_menu)
-        back_button.pack(anchor="nw", padx=5, pady=5)
 
-        label = tk.Label(content_frame, text="Информация об экспонатах будет здесь.", font=('Arial', 12))
-        label.pack(pady=20)
-        # Здесь должен быть код для отображения информации об экспонатах
+        # Создаем основной контейнер с разделением на две части
+        paned_window = ttk.PanedWindow(content_frame, orient=tk.HORIZONTAL)
+        paned_window.pack(fill=tk.BOTH, expand=True)
+
+        # Левая панель для списка экспонатов
+        left_frame = ttk.Frame(paned_window, width=300)
+
+        # Правая панель для детальной информации (изначально пустая)
+        right_frame = ttk.Frame(paned_window, width=550)
+        info_label = tk.Label(right_frame, text="Выберите экспонат для просмотра информации",
+                              font=('Arial', 14, 'bold'), wraplength= 500, justify='left')
+        info_label.pack(padx=20, pady=35)
+
+        paned_window.add(left_frame)
+        paned_window.add(right_frame)
+
+       
+
 
     def show_authors():
         clear_content()
@@ -171,7 +184,7 @@ def create_window():
             info_frame = tk.Frame(right_frame)
             info_frame.pack(fill="both", expand=True, padx=20, pady=35)
 
-            name_label = tk.Label(info_frame, text=author["name"], font=('Arial', 16, 'bold'))
+            name_label = tk.Label(info_frame, text=author["name"], font=('Arial', 14, 'bold'))
             name_label.pack(pady=(0, 15))
 
             details = [
