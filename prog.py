@@ -264,12 +264,171 @@ def create_window():
 
     def show_exhibits():
         clear_content()
-        back_button = ttk.Button(content_frame, text="< Назад", command=show_main_menu)
+
+        # Создаем основной контейнер с разделением на две части
+        paned_window = ttk.PanedWindow(content_frame, orient=tk.HORIZONTAL)
+        paned_window.pack(fill=tk.BOTH, expand=True)
+
+        # Левая панель для списка экспонатов
+        left_frame = ttk.Frame(paned_window, width=300)
+
+        # Правая панель для детальной информации (изначально пустая)
+        right_frame = ttk.Frame(paned_window, width=550)
+        info_label = tk.Label(right_frame, text="Выберите экспонат для просмотра информации",
+                              font=('Arial', 14, 'bold'), wraplength=500, justify='left')
+        info_label.pack(padx=20, pady=35)
+
+        paned_window.add(left_frame)
+        paned_window.add(right_frame)
+
+        # Кнопка "Назад" в левом верхнем углу
+        back_button = ttk.Button(left_frame, text="< Назад", command=show_main_menu)
         back_button.pack(anchor="nw", padx=5, pady=5)
 
-        label = tk.Label(content_frame, text="Информация об экспонатах будет здесь.", font=('Arial', 12))
-        label.pack(pady=20)
-        # Здесь должен быть код для отображения информации об экспонатах
+        # Заголовок списка экспонатов
+        label = tk.Label(left_frame, text="Список экспонатов:", font=('Arial', 14, 'bold'))
+        label.pack(pady=(0, 15))
+
+        # Фрейм для списка с прокруткой
+        list_container = tk.Frame(left_frame)
+        list_container.pack(fill="both", expand=True)
+
+        # Создаем canvas и скроллбар
+        canvas = tk.Canvas(list_container)
+        scrollbar = tk.Scrollbar(
+            list_container,
+            orient="vertical",
+            command=canvas.yview,
+            width=15
+        )
+        scrollable_frame = tk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Загрузка данных из CSV файла
+        def load_exhibits():
+            exhibits = []
+            try:
+                with open('exhibits.csv', mode='r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file, delimiter=';')
+                    for row in reader:
+                        exhibits.append({
+                            'ID_exhibition': row['ID_exhibition'],
+                            'ID_exhibit': row['ID_exhibit'],
+                            'name': row['name'],
+                            'year_of_creating': row['year_of_creating'],
+                            'type_of_exhibit': row['type_of_exhibit'],
+                            'genre_technic': row['genre_technic'],
+                            'materials': row['materials'],
+                            'ID_master': row['ID_master']
+                        })
+            except FileNotFoundError:
+                print("Файл exhibits.csv не найден")
+            return exhibits
+
+        def load_materials():
+            materials = {}
+            try:
+                with open('materials.csv', mode='r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file, delimiter=';')
+                    for row in reader:
+                        materials[row['ID_material']] = row['material']
+            except FileNotFoundError:
+                print("Файл materials.csv не найден")
+            return materials
+
+        materials_data = load_materials()
+
+        def load_masters():  # Renamed for clarity
+            masters = {}
+            try:
+                with open('masters.csv', mode='r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file, delimiter=';')
+                    for row in reader:
+                        masters[row['ID_master']] = row['name']  # Store ID:Name
+            except FileNotFoundError:
+                print("Файл masters.csv не найден")
+            return masters
+
+        masters_data = load_masters()
+
+        # Получаем список экспонатов
+        exhibits = load_exhibits()
+
+        # Функция для отображения информации об экспонате в правой панели
+        def show_exhibit_info(exhibit):
+            # Очищаем правую панель
+            for widget in right_frame.winfo_children():
+                widget.destroy()
+
+            # Основная информация
+            info_frame = tk.Frame(right_frame)
+            info_frame.pack(fill="both", expand=True, padx=20, pady=35)
+
+            name_label = tk.Label(info_frame, text=exhibit["name"], font=('Arial', 14, 'bold'))
+            name_label.pack(pady=(0, 15))
+
+            # Replace material IDs with names
+            material_ids = exhibit['materials'].split(',') if exhibit[
+                'materials'] else []  # Handle potential empty or missing values
+            material_names = [materials_data.get(material_id, "Неизвестно") for material_id in material_ids]
+            materials_string = ", ".join(material_names)
+
+            # Display master name instead of ID
+            master_id = exhibit['ID_master']
+            master_name = masters_data.get(master_id, "Неизвестно")  # Look up the name
+            details = [
+                f"Автор: {master_name}",  # Display the name
+                f"Год создания: {exhibit['year_of_creating']}",
+                f"Тип: {exhibit['type_of_exhibit']}",
+                f"Жанр/Техника: {exhibit['genre_technic']}",
+                f"Материалы: {materials_string}",
+            ]
+
+            for detail in details:
+                tk.Label(info_frame, text=detail, font=('Arial', 12), justify='left').pack(anchor='w', pady=2)
+
+        # Создаем кнопки для каждого экспоната
+        for exhibit in exhibits:
+            # Используем Label вместо Button для лучшего отображения
+            frame = tk.Frame(scrollable_frame)
+            frame.pack(fill="x", pady=2)
+
+            # Стиль для "кнопки"
+            lbl = tk.Label(
+                frame,
+                text=exhibit['name'],
+                font=('Arial', 10),
+                anchor='w',
+                padx=10,
+                pady=5,
+                bg='#f0f0f0',
+                relief='ridge'
+            )
+            lbl.pack(fill="x")
+
+            # Делаем кликабельным
+            lbl.bind("<Button-1>", lambda e, a=exhibit: show_exhibit_info(a))
+            lbl.bind("<Enter>", lambda e: e.widget.config(bg='#e0e0e0'))
+            lbl.bind("<Leave>", lambda e: e.widget.config(bg='#f0f0f0'))
+
+            # Автоматически подбираем ширину
+            max_width = max(
+                tkFont.Font(family='Arial', size=10).measure(exhibit['name'])
+                for exhibit in exhibits) + 30  # Добавляем отступы
+
+            canvas.config(width=min(max_width, 500))  # Ограничиваем максимальную ширину
 
     def show_authors():
         clear_content()
@@ -356,7 +515,7 @@ def create_window():
             info_frame = tk.Frame(right_frame)
             info_frame.pack(fill="both", expand=True, padx=20, pady=35)
 
-            name_label = tk.Label(info_frame, text=author["name"], font=('Arial', 16, 'bold'))
+            name_label = tk.Label(info_frame, text=author["name"], font=('Arial', 14, 'bold'))
             name_label.pack(pady=(0, 15))
 
             details = [
