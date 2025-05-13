@@ -12,6 +12,7 @@ exhibits_DATA = []
 masters = {}
 materials = {}
 
+
 def load_data():
     global exhibitions_data, locations, exhibits_DATA, masters, materials
 
@@ -59,6 +60,7 @@ def load_data():
     except FileNotFoundError:
         tk.messagebox.showerror("Ошибка", "Файл materials.csv не найден.")
         return
+
 
 def clear_content():
     """Очищает content_frame."""
@@ -160,7 +162,7 @@ def search():
             elif result["type"] == "master":
                 btn.configure(command=lambda r=result: show_author_and_highlight(r["id"]))
             elif result["type"] == "exhibit":
-                btn.configure(command=lambda r=result: show_exhibit_details(r["id"]))
+                btn.configure(command=lambda r=result: show_exhibit_and_highlight(r["id"]))
 
             btn.pack(pady=5, fill="x")
 
@@ -213,15 +215,34 @@ def show_exhibition_and_highlight(exhibition_id):
             break
 
 
-def show_exhibit_details(exhibit_id):
-    """Отображает подробную информацию об экспонате."""
-    clear_content()
-    # (Здесь код для отображения информации об экспонате)
-    print(f"Отображаем информацию об экспонате с ID: {exhibit_id}")
-    for exhibit in exhibits_DATA:
-        if exhibit[1] == exhibit_id:
-            name_label = tk.Label(content_frame, text = exhibit[2], font = ('Arial', 12))
-            name_label.pack()
+def show_exhibit_and_highlight(exhibit_id):
+    """Показывает список экспонатов и выделяет нужный"""
+    show_exhibits(highlight_id=exhibit_id)  # Передаем ID для выделения
+
+    # Прокрутка к нужному экспонату через небольшой таймаут
+    content_frame.after(100, lambda: scroll_to_exhibit(exhibit_id))
+
+
+def scroll_to_exhibit(exhibit_id):
+    """Прокручивает список к указанному экспонату"""
+    for widget in content_frame.winfo_children():
+        if isinstance(widget, ttk.PanedWindow):
+            for paned in widget.winfo_children():
+                if isinstance(paned, tk.Frame):
+                    for container in paned.winfo_children():
+                        if isinstance(container, tk.Frame):
+                            for canvas in container.winfo_children():
+                                if isinstance(canvas, tk.Canvas):
+                                    scrollable_frame = canvas.winfo_children()[0]
+                                    for exhibit_frame in scrollable_frame.winfo_children():
+                                        if hasattr(exhibit_frame, 'exhibit_id') and str(
+                                                exhibit_frame.exhibit_id) == str(exhibit_id):
+                                            # Прокручиваем к экспонату
+                                            canvas.yview_moveto(
+                                                max(0,
+                                                    min(1, exhibit_frame.winfo_y() / scrollable_frame.winfo_height())))
+                                            return
+
 
 
 def show_author_and_highlight(master_id):
@@ -441,7 +462,7 @@ def show_exhibits_for_exhibition(exhibition_id, exhibition_name):
     canvas.bind_all("<MouseWheel>", mouse_scroll)  # bind для всех виджетов, использующих canvas
 
 
-def show_exhibits():
+def show_exhibits(highlight_id=None):
     clear_content()
 
     # Создаем основной контейнер с разделением на две части
@@ -583,6 +604,15 @@ def show_exhibits():
         # Используем Label вместо Button для лучшего отображения
         frame = tk.Frame(scrollable_frame)
         frame.pack(fill="x", pady=2)
+        frame.exhibit_id = exhibit['ID_exhibit']  # Сохраняем ID экспоната
+
+        # Определяем стиль в зависимости от highlight_id
+        if highlight_id and str(exhibit['ID_exhibit']) == str(highlight_id):
+            bg_color = '#a0d0ff'  # Цвет выделения
+            relief = 'sunken'
+        else:
+            bg_color = '#f0f0f0'  # Обычный цвет
+            relief = 'ridge'
 
         # Стиль для "кнопки"
         lbl = tk.Label(
@@ -592,15 +622,15 @@ def show_exhibits():
             anchor='w',
             padx=10,
             pady=5,
-            bg='#f0f0f0',
-            relief='ridge'
+            bg=bg_color,
+            relief=relief
         )
         lbl.pack(fill="x")
 
-        # Делаем кликабельным
+        # Обработчики событий
         lbl.bind("<Button-1>", lambda e, a=exhibit: show_exhibit_info(a))
-        lbl.bind("<Enter>", lambda e: e.widget.config(bg='#e0e0e0'))
-        lbl.bind("<Leave>", lambda e: e.widget.config(bg='#f0f0f0'))
+        lbl.bind("<Enter>", lambda e: e.widget.config(bg='#e0e0e0' if e.widget['relief'] != 'sunken' else '#a0d0ff'))
+        lbl.bind("<Leave>", lambda e: e.widget.config(bg='#f0f0f0' if e.widget['relief'] != 'sunken' else '#a0d0ff'))
 
         # Автоматически подбираем ширину
         max_width = max(
