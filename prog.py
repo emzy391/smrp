@@ -90,7 +90,7 @@ def create_window():
         # Правая панель для детальной информации (изначально пустая)
         right_frame = ttk.Frame(paned_window, width=550)
         info_label = tk.Label(right_frame, text="Выберите экспонат для просмотра информации",
-                              font=('Arial', 14, 'bold'), wraplength= 500, justify='left')
+                              font=('Arial', 14, 'bold'), wraplength=500, justify='left')
         info_label.pack(padx=20, pady=35)
 
         paned_window.add(left_frame)
@@ -204,16 +204,46 @@ def create_window():
             master_id = exhibit['ID_master']
             master_name = masters_data.get(master_id, "Неизвестно")  # Look up the name
             details = [
-                f"Материалы: {materials_string}",
-                f"ID Экспоната: {exhibit['ID_exhibit']}",
+                f"Автор: {master_name}",  # Display the name
                 f"Год создания: {exhibit['year_of_creating']}",
                 f"Тип: {exhibit['type_of_exhibit']}",
                 f"Жанр/Техника: {exhibit['genre_technic']}",
-                f"Автор: {master_name}"  # Display the name
+                f"Материалы: {materials_string}",
             ]
 
             for detail in details:
                 tk.Label(info_frame, text=detail, font=('Arial', 12), justify='left').pack(anchor='w', pady=2)
+
+        # Создаем кнопки для каждого экспоната
+        for exhibit in exhibits:
+            # Используем Label вместо Button для лучшего отображения
+            frame = tk.Frame(scrollable_frame)
+            frame.pack(fill="x", pady=2)
+
+            # Стиль для "кнопки"
+            lbl = tk.Label(
+                frame,
+                text=exhibit['name'],
+                font=('Arial', 10),
+                anchor='w',
+                padx=10,
+                pady=5,
+                bg='#f0f0f0',
+                relief='ridge'
+            )
+            lbl.pack(fill="x")
+
+            # Делаем кликабельным
+            lbl.bind("<Button-1>", lambda e, a=exhibit: show_exhibit_info(a))
+            lbl.bind("<Enter>", lambda e: e.widget.config(bg='#e0e0e0'))
+            lbl.bind("<Leave>", lambda e: e.widget.config(bg='#f0f0f0'))
+
+            # Автоматически подбираем ширину
+            max_width = max(
+                tkFont.Font(family='Arial', size=10).measure(exhibit['name'])
+                for exhibit in exhibits) + 30  # Добавляем отступы
+
+            canvas.config(width=min(max_width, 500))  # Ограничиваем максимальную ширину
 
     def show_authors():
         clear_content()
