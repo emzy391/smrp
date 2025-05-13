@@ -105,6 +105,14 @@ def create_window():
         paned_window.add(left_frame)
         paned_window.add(right_frame)
 
+        # Кнопка "Назад" в левом верхнем углу
+        back_button = ttk.Button(left_frame, text="< Назад", command=show_main_menu)
+        back_button.pack(anchor="nw", padx=5, pady=5)
+
+        # Заголовок списка авторов
+        label = tk.Label(left_frame, text="Список авторов:", font=('Arial', 14, 'bold'))
+        label.pack(pady=(0, 15))
+
     # Отображаем основное меню при запуске
     show_main_menu()
 
