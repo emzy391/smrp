@@ -5,8 +5,210 @@ import datetime
 import tkinter.font as tkFont
 
 
+# Глобальные переменные для хранения данных
+exhibitions_data = []
+locations = {}
+exhibits_DATA = []
+masters = {}
+materials = {}
+
+def load_data():
+    global exhibitions_data, locations, exhibits_DATA, masters, materials
+
+    try:
+        with open("exhibitions.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file, delimiter=";")
+            next(reader)
+            exhibitions_data = list(reader)
+    except FileNotFoundError:
+        tk.messagebox.showerror("Ошибка", "Файл exhibitions.csv не найден.")
+        return
+
+    try:
+        with open("location.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file, delimiter=";")
+            next(reader)
+            locations = {row[0]: row[1:] for row in reader}
+    except FileNotFoundError:
+        tk.messagebox.showerror("Ошибка", "Файл location.csv не найден.")
+        return
+
+    try:
+        with open("exhibits.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file, delimiter=";")
+            next(reader)
+            exhibits_DATA = list(reader)
+    except FileNotFoundError:
+        tk.messagebox.showerror("Ошибка", "Файл exhibits.csv не найден.")
+        return
+
+    try:
+        with open("masters.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file, delimiter=";")
+            next(reader)
+            masters = {row[0]: row[1] for row in reader}
+    except FileNotFoundError:
+        tk.messagebox.showerror("Ошибка", "Файл masters.csv не найден.")
+        return
+
+    try:
+        with open("materials.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file, delimiter=";")
+            next(reader)
+            materials = {row[0]: row[1] for row in reader}
+    except FileNotFoundError:
+        tk.messagebox.showerror("Ошибка", "Файл materials.csv не найден.")
+        return
+
+def clear_content():
+    """Очищает content_frame."""
+    for widget in content_frame.winfo_children():
+        widget.destroy()
+
+
+def search():
+    """Выполняет поиск по данным и отображает результаты."""
+    query = search_entry.get().lower()
+    clear_content()
+
+    results = []
+
+    # Поиск по выставкам
+    exhibition_ids = set()
+    for exhibition in exhibitions_data:
+        if query in exhibition[1].lower():  # Ищем по названию выставки
+            if exhibition[0] not in exhibition_ids:
+                results.append({"type": "exhibition", "id": exhibition[0], "name": exhibition[1]})
+                exhibition_ids.add(exhibition[0])
+
+    # Поиск по экспонатам
+    exhibit_ids = set()
+    for exhibit in exhibits_DATA:
+        if query in exhibit[2].lower():
+            exhibit_id = exhibit[1]
+            if exhibit_id not in exhibit_ids:
+                results.append({"type": "exhibit", "id": exhibit_id, "name": exhibit[2]})
+                exhibit_ids.add(exhibit_id)
+
+    # Поиск по мастерам
+    master_ids = set()
+    for master_id, master_name in masters.items():
+        if query in master_name.lower():  # Ищем по имени мастера
+            if master_id not in master_ids:  # Проверка на дубликат
+                results.append({"type": "master", "id": master_id, "name": master_name})
+                master_ids.add(master_id)  # Добавляем master_id в set
+
+    # Поиск по материалам
+    material_exhibit_ids = set()  # Создаем новый set для поиска по материалам
+    for exhibit in exhibits_DATA:
+        material_ids = exhibit[6].split(',')
+        for material_id in material_ids:
+            if material_id in materials and query in materials[material_id].lower():
+                exhibit_id = exhibit[1]
+                if exhibit_id not in material_exhibit_ids:
+                    results.append({"type": "exhibit", "id": exhibit_id, "name": exhibit[2]})
+                    material_exhibit_ids.add(exhibit_id)
+
+        # Canvas для прокрутки
+    print(f"Найдено результатов: {len(results)}")  # Для отладки
+
+    # Основной контейнер
+    main_frame = tk.Frame(content_frame)
+    main_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+    # Canvas и Scrollbar
+    canvas = tk.Canvas(main_frame, highlightthickness=0)
+    scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+
+    scrollbar.pack(side="right", fill="y")
+    canvas.pack(side="left", fill="both", expand=True)
+
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # Фрейм для результатов
+    results_frame = tk.Frame(canvas)
+    canvas.create_window((0, 0), window=results_frame, anchor="nw")
+
+    if results:
+        for result in results:
+            # Создаем обработчик для каждой кнопки
+            def make_handler(r):
+                return lambda: (
+                    show_exhibition_details(r["id"]) if r["type"] == "exhibition" else
+                    show_exhibit_details(r["id"]) if r["type"] == "exhibit" else
+                    show_master_details(r["id"])
+                )
+
+            # Определяем текст для кнопки
+            type_text = {
+                "exhibition": "Выставка",
+                "exhibit": "Экспонат",
+                "master": "Автор"
+            }.get(result["type"], result["type"].capitalize())
+
+            # Создаем и размещаем кнопку
+            btn = ttk.Button(
+                results_frame,
+                text=f"{type_text}: {result['name']}",
+                command=make_handler(result),
+                width=60
+            )
+            btn.pack(pady=5, fill="x")
+    else:
+        tk.Label(
+            results_frame,
+            text="Нет результатов",
+            font=("Arial", 12)
+        ).pack(pady=20)
+
+    # Обновляем геометрию
+    def update_scrollregion():
+        canvas.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox("all"))
+        # Центрируем содержимое
+        canvas_width = canvas.winfo_width()
+        results_frame.update_idletasks()
+        frame_width = results_frame.winfo_reqwidth()
+        if frame_width < canvas_width:
+            canvas.coords(results_frame, (canvas_width - frame_width) // 2, 0)
+
+    canvas.after(100, update_scrollregion)
+
+
+def show_exhibition_details(exhibition_id):
+    """Отображает подробную информацию о выставке."""
+    clear_content()
+    # (Здесь код для отображения информации о выставке)
+    print(f"Отображаем информацию о выставке с ID: {exhibition_id}")
+    # Пример: Вывести название выставки
+    for exhibition in exhibitions_data:
+        if exhibition[0] == exhibition_id:
+            title_label = tk.Label(content_frame, text = exhibition[1], font = ('Arial', 12))
+            title_label.pack()
+
+def show_exhibit_details(exhibit_id):
+    """Отображает подробную информацию об экспонате."""
+    clear_content()
+    # (Здесь код для отображения информации об экспонате)
+    print(f"Отображаем информацию об экспонате с ID: {exhibit_id}")
+    for exhibit in exhibits_DATA:
+        if exhibit[1] == exhibit_id:
+            name_label = tk.Label(content_frame, text = exhibit[2], font = ('Arial', 12))
+            name_label.pack()
+
+def show_master_details(master_id):
+    clear_content()
+    print(f"Отображаем информацию о мастере с ID: {master_id}")
+    master_name = masters.get(master_id)
+    if master_name:
+        master_label = tk.Label(content_frame, text = master_name, font = ('Arial', 12))
+        master_label.pack()
+
+
 def create_window():
     """Создает пустое окно размером с четверть экрана."""
+    global root, content_frame, search_entry, search_button
+
     # 1. Получаем размеры экрана
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -20,14 +222,17 @@ def create_window():
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")  # Форматированная строки
     root.title("База данных") # Задаем заголовок окна (необязательно)
 
-
-    # Frame для поисковой строки (всегда отображается)
+    # Frame для поисковой строки и кнопки с увеличенными отступами
     search_frame = tk.Frame(root, bg="#ADD8E6")
-    search_frame.pack(pady=(window_height // 16, 0))
+    search_frame.pack(pady=(window_height // 16, 0), padx=20)  # Добавлен padx=20 для отступов слева/справа
 
-    # Поисковая строка
-    search_entry = ttk.Entry(search_frame, width=60)
-    search_entry.pack(padx=5, pady=5)
+    # Поисковая строка с фиксированной шириной
+    search_entry = ttk.Entry(search_frame, width=50)
+    search_entry.pack(side="left", padx=(10, 5), pady=5)  # Левый отступ 10, правый 5
+
+    # Кнопка поиска сразу справа
+    search_button = ttk.Button(search_frame, text="Искать", command=search)
+    search_button.pack(side="left", pady=5, padx=(0, 10))  # Правый отступ 10
 
     # Стиль поисковой строки
     style_entry = ttk.Style()
@@ -41,10 +246,6 @@ def create_window():
     content_frame = tk.Frame(root)
     content_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Функция для очистки content_frame
-    def clear_content():
-        for widget in content_frame.winfo_children():
-            widget.destroy()
 
     def show_main_menu():
         clear_content()
@@ -75,18 +276,7 @@ def create_window():
         back_button = ttk.Button(content_frame, text="< Назад", command=show_main_menu)
         back_button.pack(anchor="nw", padx=5, pady=5)
 
-        exhibitions_data = []  # Инициализируем exhibitions_data
-        locations = {}  # Инициализируем locations
-
         # Чтение данных из exhibitions.csv
-        try:
-            with open("exhibitions.csv", "r", encoding="utf-8") as file:
-                reader = csv.reader(file, delimiter=";")
-                next(reader)
-                exhibitions_data = list(reader)
-        except FileNotFoundError:
-            tk.messagebox.showerror("Ошибка", "Файл exhibitions.csv не найден.")
-            return  # Важно выйти из функции, если файл не найден
 
         # Сортировка выставок по дате начала (от новых к старым)
         try:
@@ -95,15 +285,6 @@ def create_window():
             tk.messagebox.showerror("Ошибка", f"Ошибка при сортировке выставок: {e}. Проверьте формат дат в файле.")
 
         # Чтение данных из location.csv
-        try:
-            with open("location.csv", "r", encoding="utf-8") as file:
-                reader = csv.reader(file, delimiter=";")
-                next(reader)  # Пропускаем заголовок
-                locations = {row[0]: row[1:] for row in
-                             reader}  # Создаем словарь {ID: [city, address, organization, phone]}
-        except FileNotFoundError:
-            tk.messagebox.showerror("Ошибка", "Файл location.csv не найден.")
-            return  # Важно выйти из функции, если файл не найден
 
         # Список выставок
         exhibition_names = [row[1] for row in exhibitions_data]
@@ -215,15 +396,6 @@ def create_window():
             return
 
         # Чтение данных из masters.csv
-        masters = {}
-        try:
-            with open("masters.csv", "r", encoding="utf-8") as masters_file:
-                masters_reader = csv.reader(masters_file, delimiter=";")
-                next(masters_reader)  # Пропускаем заголовок
-                masters = {row[0]: row[1] for row in masters_reader}  # Создаем словарь {ID_master: name}
-        except FileNotFoundError:
-            tk.messagebox.showerror("Ошибка", "Файл masters.csv не найден.")
-            return
 
         # Canvas для прокрутки
         canvas = tk.Canvas(content_frame, highlightthickness=0)
@@ -398,9 +570,8 @@ def create_window():
 
             canvas.config(width=min(max_width, 500))  # Ограничиваем максимальную ширину
 
-    # Отображаем основное меню при запуске
+    load_data()
     show_main_menu()
-
 
 root = tk.Tk() # Создаем главное окно Tkinter
 create_window() # Вызываем функцию для создания окна
