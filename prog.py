@@ -1,11 +1,10 @@
 import csv
 import tkinter as tk
-from tkinter import ttk  # Import ttk for styled widgets (like Entry)
+from tkinter import ttk
 import datetime
 import tkinter.font as tkFont
 
 
-# Глобальные переменные для хранения данных
 exhibitions_data = []
 locations = {}
 exhibits_DATA = []
@@ -75,6 +74,15 @@ def search():
 
     results = []
 
+    try:
+        with open("exhibitions.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file, delimiter=";")
+            next(reader)
+            exhibitions_data = list(reader)
+    except FileNotFoundError:
+        tk.messagebox.showerror("Ошибка", "Файл exhibitions.csv не найден.")
+        return
+
     # Поиск по выставкам
     exhibition_ids = set()
     for exhibition in exhibitions_data:
@@ -99,6 +107,15 @@ def search():
             if master_id not in master_ids:  # Проверка на дубликат
                 results.append({"type": "master", "id": master_id, "name": master_name})
                 master_ids.add(master_id)  # Добавляем master_id в set
+
+    try:
+        with open("materials.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file, delimiter=";")
+            next(reader)
+            materials = {row[0]: row[1] for row in reader}
+    except FileNotFoundError:
+        tk.messagebox.showerror("Ошибка", "Файл materials.csv не найден.")
+        return
 
     # Поиск по материалам
     material_exhibit_ids = set()  # Создаем новый set для поиска по материалам
@@ -167,11 +184,19 @@ def search():
             btn.pack(pady=5, fill="x")
 
     else:
+        # Фрейм для сообщения и кнопки
+        no_results_frame = tk.Frame(results_frame)
+        no_results_frame.pack(pady=20)
+
+        # Сообщение об отсутствии результатов
         tk.Label(
-            results_frame,
+            no_results_frame,
             text="Нет результатов",
             font=("Arial", 12)
-        ).pack(pady=20)
+        ).pack(pady=(0, 10))  # Отступ снизу
+
+        back_button = ttk.Button(no_results_frame, text="< Назад", command=show_main_menu)
+        back_button.pack(anchor="nw", padx=5, pady=5)
 
     # Обновляем геометрию
     def update_scrollregion():
@@ -274,6 +299,10 @@ def scroll_to_author(master_id):
 
 def show_main_menu():
     clear_content()
+    root.title("Основное меню")
+
+    # bg_color = "#f9e8fa"
+    # content_frame.configure(bg=bg_color)
 
     # Frame для кнопок основного меню
     frame_buttons = tk.Frame(content_frame)
@@ -298,7 +327,7 @@ def show_main_menu():
 
 def show_exhibitions():
     clear_content()
-    root.title("База данных")  # <------ Вот изменение!
+    root.title("Выставки")
     back_button = ttk.Button(content_frame, text="< Назад", command=show_main_menu)
     back_button.pack(anchor="nw", padx=5, pady=5)
 
@@ -464,6 +493,7 @@ def show_exhibits_for_exhibition(exhibition_id, exhibition_name):
 
 def show_exhibits(highlight_id=None):
     clear_content()
+    root.title("Экспонаты")
 
     # Создаем основной контейнер с разделением на две части
     paned_window = ttk.PanedWindow(content_frame, orient=tk.HORIZONTAL)
@@ -642,6 +672,7 @@ def show_exhibits(highlight_id=None):
 
 def show_authors(highlight_id=None):
     clear_content()
+    root.title("Авторы")
 
     # Создаем основной контейнер с разделением на две части
     paned_window = ttk.PanedWindow(content_frame, orient=tk.HORIZONTAL)
@@ -782,6 +813,12 @@ def create_window():
     """Создает пустое окно размером с четверть экрана."""
     global root, content_frame, search_entry, search_button
 
+    # bg_color = "#f9e8fa"
+    # root.configure(bg=bg_color)
+
+    icon = tk.PhotoImage(file='цветок.png')
+    root.iconphoto(False, icon)
+
     # 1. Получаем размеры экрана
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -824,8 +861,6 @@ def create_window():
     # def show_exhibitions():
 
     # def show_exhibits_for_exhibition(exhibition_id, exhibition_name):
-
-    #load_data()
 
     load_data()
     show_main_menu()
