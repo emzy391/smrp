@@ -181,6 +181,40 @@ def create_window():
         # Получаем список экспонатов
         exhibits = load_exhibits()
 
+        # Функция для отображения информации об экспонате в правой панели
+        def show_exhibit_info(exhibit):
+            # Очищаем правую панель
+            for widget in right_frame.winfo_children():
+                widget.destroy()
+
+            # Основная информация
+            info_frame = tk.Frame(right_frame)
+            info_frame.pack(fill="both", expand=True, padx=20, pady=35)
+
+            name_label = tk.Label(info_frame, text=exhibit["name"], font=('Arial', 14, 'bold'))
+            name_label.pack(pady=(0, 15))
+
+            # Replace material IDs with names
+            material_ids = exhibit['materials'].split(',') if exhibit[
+                'materials'] else []  # Handle potential empty or missing values
+            material_names = [materials_data.get(material_id, "Неизвестно") for material_id in material_ids]
+            materials_string = ", ".join(material_names)
+
+            # Display master name instead of ID
+            master_id = exhibit['ID_master']
+            master_name = masters_data.get(master_id, "Неизвестно")  # Look up the name
+            details = [
+                f"Материалы: {materials_string}",
+                f"ID Экспоната: {exhibit['ID_exhibit']}",
+                f"Год создания: {exhibit['year_of_creating']}",
+                f"Тип: {exhibit['type_of_exhibit']}",
+                f"Жанр/Техника: {exhibit['genre_technic']}",
+                f"Автор: {master_name}"  # Display the name
+            ]
+
+            for detail in details:
+                tk.Label(info_frame, text=detail, font=('Arial', 12), justify='left').pack(anchor='w', pady=2)
+
     def show_authors():
         clear_content()
 
