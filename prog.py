@@ -131,6 +131,56 @@ def create_window():
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        # Загрузка данных из CSV файла
+        def load_exhibits():
+            exhibits = []
+            try:
+                with open('exhibits.csv', mode='r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file, delimiter=';')
+                    for row in reader:
+                        exhibits.append({
+                            'ID_exhibition': row['ID_exhibition'],
+                            'ID_exhibit': row['ID_exhibit'],
+                            'name': row['name'],
+                            'year_of_creating': row['year_of_creating'],
+                            'type_of_exhibit': row['type_of_exhibit'],
+                            'genre_technic': row['genre_technic'],
+                            'materials': row['materials'],
+                            'ID_master': row['ID_master']
+                        })
+            except FileNotFoundError:
+                print("Файл exhibits.csv не найден")
+            return exhibits
+
+        def load_materials():
+            materials = {}
+            try:
+                with open('materials.csv', mode='r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file, delimiter=';')
+                    for row in reader:
+                        materials[row['ID_material']] = row['material']
+            except FileNotFoundError:
+                print("Файл materials.csv не найден")
+            return materials
+
+        materials_data = load_materials()
+
+        def load_masters():  # Renamed for clarity
+            masters = {}
+            try:
+                with open('masters.csv', mode='r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file, delimiter=';')
+                    for row in reader:
+                        masters[row['ID_master']] = row['name']  # Store ID:Name
+            except FileNotFoundError:
+                print("Файл masters.csv не найден")
+            return masters
+
+        masters_data = load_masters()
+
+        # Получаем список экспонатов
+        exhibits = load_exhibits()
+
     def show_authors():
         clear_content()
 
