@@ -140,6 +140,27 @@ def create_window():
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        # Загрузка данных из CSV файла
+        def load_authors():
+            authors = []
+            try:
+                with open('masters.csv', mode='r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file, delimiter=';')
+                    for row in reader:
+                        authors.append({
+                            'id': row['ID_master'],
+                            'name': row['name'],
+                            'years': row['year_of_live'],
+                            'city': row['city'],
+                            'country': row['country']
+                        })
+            except FileNotFoundError:
+                print("Файл masters.csv не найден")
+            return authors
+
+        # Получаем список авторов
+        authors = load_authors()
+
     # Отображаем основное меню при запуске
     show_main_menu()
 
