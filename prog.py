@@ -93,6 +93,18 @@ def create_window():
         paned_window = ttk.PanedWindow(content_frame, orient=tk.HORIZONTAL)
         paned_window.pack(fill=tk.BOTH, expand=True)
 
+        # Левая панель для списка авторов
+        left_frame = ttk.Frame(paned_window, width=500)
+
+        # Правая панель для детальной информации (изначально пустая)
+        right_frame = ttk.Frame(paned_window, width=400)
+        info_label = tk.Label(right_frame, text="Выберите автора для просмотра информации",
+                              font=('Arial', 14, 'bold'), wraplength=450, justify='left')
+        info_label.pack(padx=20, pady=35)
+
+        paned_window.add(left_frame)
+        paned_window.add(right_frame)
+
     # Отображаем основное меню при запуске
     show_main_menu()
 
