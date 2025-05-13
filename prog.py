@@ -48,9 +48,13 @@ def create_window():
     def show_main_menu():
         clear_content()
 
-        # Frame для кнопок основного меню
-        frame_buttons = tk.Frame(content_frame)
-        frame_buttons.pack(pady=0)
+        # Создаем основной контейнер первым
+        main_container = tk.Frame(content_frame)
+        main_container.pack(fill="both", expand=True)
+
+        # Затем создаем верхний фрейм для основных кнопок
+        frame_buttons = tk.Frame(main_container)
+        frame_buttons.pack(pady=(0, 20))
 
         # Стиль для кнопок
         style_button = ttk.Style()
@@ -58,15 +62,48 @@ def create_window():
                                font=('Arial', 14),
                                padding=10)
 
+        # Основные кнопки меню
         button_exhibitions = ttk.Button(frame_buttons, text="Выставки", style="My.TButton", width=20,
                                         command=show_exhibitions)
         button_exhibits = ttk.Button(frame_buttons, text="Экспонаты", style="My.TButton", width=20,
                                      command=show_exhibits)
-        button_authors = ttk.Button(frame_buttons, text="Авторы", style="My.TButton", width=20, command=show_authors)
+        button_authors = ttk.Button(frame_buttons, text="Авторы", style="My.TButton", width=20,
+                                    command=show_authors)
 
         button_exhibitions.pack(pady=5)
         button_exhibits.pack(pady=5)
         button_authors.pack(pady=5)
+
+        # Пустое пространство для выравнивания
+        spacer = tk.Frame(main_container, height=20)
+        spacer.pack(fill="x")
+
+        # Центральный фрейм для кнопок редактирования
+        frame_edit_buttons = tk.Frame(main_container)
+        frame_edit_buttons.pack(pady=20)  # Отступы сверху и снизу
+
+        # Кнопки добавления и удаления
+        button_add = ttk.Button(frame_edit_buttons, text="Добавить", style="My.TButton", width=15,
+                                command=add_item)
+        button_delete = ttk.Button(frame_edit_buttons, text="Удалить", style="My.TButton", width=15,
+                                   command=delete_item)
+
+        button_add.pack(side="left", padx=10)
+        button_delete.pack(side="left", padx=10)
+
+        # Нижний заполнитель для центрирования
+        bottom_spacer = tk.Frame(main_container)
+        bottom_spacer.pack(fill="both", expand=True)
+
+    def add_item():
+        """Функция для добавления нового элемента"""
+        print("Добавление нового элемента")
+        # Здесь будет логика добавления
+
+    def delete_item():
+        """Функция для удаления выбранного элемента"""
+        print("Удаление выбранного элемента")
+        # Здесь будет логика удаления
 
     def show_exhibitions():
         clear_content()
