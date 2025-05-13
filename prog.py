@@ -104,6 +104,32 @@ def create_window():
         label = tk.Label(left_frame, text="Список экспонатов:", font=('Arial', 14, 'bold'))
         label.pack(pady=(0, 15))
 
+        # Фрейм для списка с прокруткой
+        list_container = tk.Frame(left_frame)
+        list_container.pack(fill="both", expand=True)
+
+        # Создаем canvas и скроллбар
+        canvas = tk.Canvas(list_container)
+        scrollbar = tk.Scrollbar(
+            list_container,
+            orient="vertical",
+            command=canvas.yview,
+            width=15
+        )
+        scrollable_frame = tk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
     def show_authors():
         clear_content()
