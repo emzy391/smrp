@@ -161,6 +161,58 @@ def create_window():
         # Получаем список авторов
         authors = load_authors()
 
+        # Функция для отображения информации об авторе в правой панели
+        def show_author_info(author):
+            # Очищаем правую панель
+            for widget in right_frame.winfo_children():
+                widget.destroy()
+
+            # Основная информация
+            info_frame = tk.Frame(right_frame)
+            info_frame.pack(fill="both", expand=True, padx=20, pady=35)
+
+            name_label = tk.Label(info_frame, text=author["name"], font=('Arial', 16, 'bold'))
+            name_label.pack(pady=(0, 15))
+
+            details = [
+                f"Годы жизни: {author['years']}",
+                f"Место рождения: {author['city']}, {author['country']}"
+            ]
+
+            for detail in details:
+                tk.Label(info_frame, text=detail, font=('Arial', 12), justify='left').pack(anchor='w', pady=2)
+
+        # Создаем кнопки для каждого автора
+        for author in authors:
+            # Используем Label вместо Button для лучшего отображения
+            frame = tk.Frame(scrollable_frame)
+            frame.pack(fill="x", pady=2)
+
+            # Стиль для "кнопки"
+            lbl = tk.Label(
+                frame,
+                text=author['name'],
+                font=('Arial', 11),
+                anchor='w',
+                padx=10,
+                pady=5,
+                bg='#f0f0f0',
+                relief='ridge'
+            )
+            lbl.pack(fill="x")
+
+            # Делаем кликабельным
+            lbl.bind("<Button-1>", lambda e, a=author: show_author_info(a))
+            lbl.bind("<Enter>", lambda e: e.widget.config(bg='#e0e0e0'))
+            lbl.bind("<Leave>", lambda e: e.widget.config(bg='#f0f0f0'))
+
+            # Автоматически подбираем ширину
+            max_width = max(
+                tkFont.Font(family='Arial', size=11).measure(author['name'])  # Use tkFont.Font
+                for author in authors) + 30  # Добавляем отступы
+
+            canvas.config(width=min(max_width, 500))  # Ограничиваем максимальную ширину
+
     # Отображаем основное меню при запуске
     show_main_menu()
 
